@@ -5,4 +5,4 @@
   become_user: root
 
   roles:
-    ansible-role-update_sshd_config
+    - ansible-role-update_sshd_config
