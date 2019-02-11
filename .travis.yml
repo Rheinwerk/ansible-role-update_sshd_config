@@ -9,6 +9,7 @@ dist: trusty
 # Install ansible
 addons:
   apt:
+    update: true
     packages:
       - python-pip
 
