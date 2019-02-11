@@ -1,0 +1,14 @@
+# vim: ts=2 sw=2 et ft=ansible
+---
+_sshd:
+  krl:
+    s3_key: "my.s3.bucketd/path/to/krl-file"
+    filename: "/etc/ssh/revoked_keys.krl"
+    update_command: "/bin/echo"
+    cron_special_time: "hourly"
+  principals:
+    filename_pattern: "%u_principals"
+    mappings:
+      "ec2-user":
+        - "mapping1"
+        - "mapping2"
