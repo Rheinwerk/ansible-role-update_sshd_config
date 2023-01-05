@@ -37,8 +37,10 @@
         regexp: '^RevokedKeys.*$'
         line: "RevokedKeys {{ _sshd.krl.filename }}"
 
+    # skip idempotence tests
     - name: Run initial KRL update # noqa no-changed-when
       command: "{{ _sshd.krl.update_command }} {{ _sshd.krl.s3_key }} {{ _sshd.krl.filename }}"
+      tags: molecule-idempotence-notest
 
     - name: Install KRL update cronjob # noqa args[module]
       cron:
