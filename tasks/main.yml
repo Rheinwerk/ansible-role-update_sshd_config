@@ -30,6 +30,8 @@
         group: root
         mode: 0644
         state: touch
+        access_time: preserve
+        modification_time: preserve
 
     - name: Update sshd configuration - Revoked Keys
       lineinfile:
