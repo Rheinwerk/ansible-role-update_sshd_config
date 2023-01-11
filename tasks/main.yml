@@ -1,6 +1,7 @@
 ---
 
 - name: Configure SSH principals
+  when: _sshd.principals is defined
   block:
     - name: Create Authorized Principals Files
       template:
@@ -16,9 +17,9 @@
         path: "/etc/ssh/sshd_config"
         regexp: '^AuthorizedPrincipalsFile.*$'
         line: "AuthorizedPrincipalsFile /etc/ssh/{{ _sshd.principals.filename_pattern }}"
-  when: _sshd.principals is defined
 
 - name: Configure SSH KRL
+  when: _sshd.krl is defined
   block:
     # This is done so we can be sure the file exists. If it
     # does not, SSHD will start, but reject any public key basic
@@ -49,4 +50,3 @@
         name: "Update SSH Revoked Keys"
         job: "{{ _sshd.krl.update_command }} {{ _sshd.krl.s3_key }} {{ _sshd.krl.filename }}"
         special_time: "{{ _sshd.krl.cron_special_time | default('hourly') }}"
-  when: _sshd.krl is defined
