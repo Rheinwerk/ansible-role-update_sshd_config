@@ -1,15 +1,17 @@
 ---
-allow_duplicates: yes
 galaxy_info:
   author: Daniel Schneller
+  namespace: rheinwerk
+  role_name: update_sshd_config
   description: Configures SSHD to include RevokedKeys and/or AuthorizedPrincipalsFile.
   company: Rheinwerk
   license: license (GPLv3)
-  min_ansible_version: 2.3
+  min_ansible_version: 2.9.0
   platforms:
-  - name: Ubuntu
-    versions:
-    - trusty
+    - name: Ubuntu
+      versions:
+        - focal
+        - jammy
   galaxy_tags:
     - sshd
 dependencies: []

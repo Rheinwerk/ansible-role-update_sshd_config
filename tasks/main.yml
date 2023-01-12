@@ -1,6 +1,8 @@
 ---
 
-- block:
+- name: Configure SSH principals
+  when: _sshd.principals is defined
+  block:
     - name: Create Authorized Principals Files
       template:
         src: "etc/ssh/authorized_principals.j2"
@@ -15,9 +17,10 @@
         path: "/etc/ssh/sshd_config"
         regexp: '^AuthorizedPrincipalsFile.*$'
         line: "AuthorizedPrincipalsFile /etc/ssh/{{ _sshd.principals.filename_pattern }}"
-  when: _sshd.principals is defined
 
-- block:
+- name: Configure SSH KRL
+  when: _sshd.krl is defined
+  block:
     # This is done so we can be sure the file exists. If it
     # does not, SSHD will start, but reject any public key basic
     # logins, effectively locking us out.
@@ -28,6 +31,8 @@
         group: root
         mode: 0644
         state: touch
+        access_time: preserve
+        modification_time: preserve
 
     - name: Update sshd configuration - Revoked Keys
       lineinfile:
@@ -35,12 +40,13 @@
         regexp: '^RevokedKeys.*$'
         line: "RevokedKeys {{ _sshd.krl.filename }}"
 
-    - name: Run initial KRL update
-      command: "{{_sshd.krl.update_command}} {{ _sshd.krl.s3_key  }} {{ _sshd.krl.filename }}"
+    # skip idempotence tests
+    - name: Run initial KRL update # noqa no-changed-when
+      command: "{{ _sshd.krl.update_command }} {{ _sshd.krl.s3_key }} {{ _sshd.krl.filename }}"
+      tags: molecule-idempotence-notest
 
-    - name: Install KRL update cronjob
+    - name: Install KRL update cronjob # noqa args[module]
       cron:
         name: "Update SSH Revoked Keys"
-        job: "{{_sshd.krl.update_command}} {{ _sshd.krl.s3_key  }} {{ _sshd.krl.filename }}"
-        special_time: "{{ _sshd.krl.cron_special_time|default('hourly') }}"
-  when: _sshd.krl is defined
+        job: "{{ _sshd.krl.update_command }} {{ _sshd.krl.s3_key }} {{ _sshd.krl.filename }}"
+        special_time: "{{ _sshd.krl.cron_special_time | default('hourly') }}"
