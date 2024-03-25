@@ -50,3 +50,8 @@
         name: "Update SSH Revoked Keys"
         job: "{{ _sshd.krl.update_command }} {{ _sshd.krl.s3_key }} {{ _sshd.krl.filename }}"
         special_time: "{{ _sshd.krl.cron_special_time | default('hourly') }}"
+
+- name: Start ssh service
+  ansible.builtin.systemd:
+    name: ssh
+    state: started
