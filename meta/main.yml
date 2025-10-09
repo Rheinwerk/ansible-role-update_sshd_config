@@ -1,7 +1,6 @@
 ---
 galaxy_info:
-  author: Daniel Schneller
-  namespace: rheinwerk
+  author: rheinwerk
   role_name: update_sshd_config
   description: Configures SSHD to include RevokedKeys and/or AuthorizedPrincipalsFile.
   company: Rheinwerk
