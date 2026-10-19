@@ -14,3 +14,11 @@
     mode: "0755"
     owner: root
   when: ansible_facts['virtualization_type'] in ['docker', 'podman', 'lxc', 'containerd', 'VirtualPC']
+
+# The cron entry of role versions up to v0.5.0; the role removes it (checked in verify.yml)
+- name: Install the KRL cron entry of older role versions # noqa args[module]
+  ansible.builtin.cron:
+    name: "Update SSH Revoked Keys"
+    job: "/bin/true"
+    special_time: hourly
+  tags: molecule-idempotence-notest

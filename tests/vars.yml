@@ -13,4 +13,4 @@ _sshd_krl:
   s3_key: "molecule/revoked_keys.krl"
   filename: "/etc/ssh/revoked_keys.krl"
   update_command: "/bin/echo"
-  cron_special_time: "hourly"
+  on_calendar: "hourly"

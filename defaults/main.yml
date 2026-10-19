@@ -1,12 +1,13 @@
 # vim: ts=2 sw=2 et ft=ansible
 ---
-# Key revocation list: the role runs "<update_command> <s3_key> <filename>" once and then via cron.
+# Key revocation list: the role runs "<update_command> <s3_key> <filename>" once and then from the
+# systemd timer ssh-krl-update.timer (on_calendar is a systemd OnCalendar expression).
 # The default reads the CD_ENV contract of the consumer; set `_sshd_krl: {}` to skip the KRL setup.
 _sshd_krl:
   s3_key: "cd.{{ CD_ENV.iaas.account }}.static/{{ CD_ENV.iaas.env }}/ssh_key_revocation_lists/revoked_keys.krl"
   filename: "/etc/ssh/revoked_keys.krl"
   update_command: "/usr/local/sbin/update-ssh-krl"
-  cron_special_time: "hourly"
+  on_calendar: "hourly"
 
 # Authorized principals: every mapping entry becomes a line "<user>_<entry>" in
 # /etc/ssh/<user>_principals, next to "<user>_super". Set `_sshd_principals: {}` to skip.
