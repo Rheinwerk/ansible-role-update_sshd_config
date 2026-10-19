@@ -1,0 +1,9 @@
+{{ ansible_managed | comment }}
+[Unit]
+Description=Update the SSH key revocation list from S3
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart={{ _sshd_krl.update_command }} {{ _sshd_krl.s3_key }} {{ _sshd_krl.filename }}

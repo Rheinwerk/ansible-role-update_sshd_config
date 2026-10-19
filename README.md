@@ -22,15 +22,21 @@ differ. The defaults are the CenterDevice values and read the consumer's `CD_ENV
 
 | Variable | Default | Reads |
 |---|---|---|
-| `_sshd_krl` | KRL from `cd.<account>.static/<env>/ssh_key_revocation_lists/revoked_keys.krl` to `/etc/ssh/revoked_keys.krl`, fetched by `/usr/local/sbin/update-ssh-krl` once and then `hourly` via cron | `CD_ENV.iaas.account`, `CD_ENV.iaas.env` |
+| `_sshd_krl` | KRL from `cd.<account>.static/<env>/ssh_key_revocation_lists/revoked_keys.krl` to `/etc/ssh/revoked_keys.krl`, fetched by `/usr/local/sbin/update-ssh-krl` once and then `hourly` by the systemd timer `ssh-krl-update.timer` | `CD_ENV.iaas.account`, `CD_ENV.iaas.env` |
 | `_sshd_principals` | `%u_principals` files; `cd-admin` gets the six env/account/name/hostgroup principals | `CD_ENV.iaas.env`, `CD_ENV.iaas.account`, `CD_ENV.iaas.name`, `CD_ENV.instance.hostgroup` |
 
 `_sshd_krl` keys: `s3_key`, `filename`, `update_command` (called as `<update_command> <s3_key> <filename>`),
-`cron_special_time`. `_sshd_principals` keys: `filename_pattern` (the `AuthorizedPrincipalsFile`),
+`on_calendar` (a systemd `OnCalendar` expression, e.g. `hourly`). `_sshd_principals` keys: `filename_pattern` (the `AuthorizedPrincipalsFile`),
 `mappings` (user to list of principals; every entry becomes a line `<user>_<entry>` next to
 `<user>_super`). An empty mapping (`{}`) skips that part of the role.
 
 Until v0.4.0 the role took one `_sshd` dict with the keys `krl` and `principals` instead.
+
+Until v0.5.0 the KRL update ran from root's crontab (key `cron_special_time`). The role now installs
+`ssh-krl-update.service` and `ssh-krl-update.timer` instead; it does not remove an existing cron entry,
+so use it on new instances. The service runs with systemd's PATH, which includes
+`/usr/local/bin` (cron's PATH is `/usr/bin:/bin`), and a failed update shows up in the journal and in
+`systemctl --failed`.
 
 Dependencies
 ------------

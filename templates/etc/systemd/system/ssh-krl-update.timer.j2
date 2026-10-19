@@ -1,0 +1,9 @@
+{{ ansible_managed | comment }}
+[Unit]
+Description=Update the SSH key revocation list regularly
+
+[Timer]
+OnCalendar={{ _sshd_krl.on_calendar }}
+
+[Install]
+WantedBy=timers.target

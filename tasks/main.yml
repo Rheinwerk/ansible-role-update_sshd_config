@@ -45,11 +45,25 @@
       ansible.builtin.command: "{{ _sshd_krl.update_command }} {{ _sshd_krl.s3_key }} {{ _sshd_krl.filename }}"
       tags: molecule-idempotence-notest
 
-    - name: Install KRL update cronjob # noqa args[module]
-      ansible.builtin.cron:
-        name: "Update SSH Revoked Keys"
-        job: "{{ _sshd_krl.update_command }} {{ _sshd_krl.s3_key }} {{ _sshd_krl.filename }}"
-        special_time: "{{ _sshd_krl.cron_special_time }}"
+    # A systemd timer instead of cron: the service gets systemd's PATH (cron's is /usr/bin:/bin),
+    # and failed runs show up in the journal and in `systemctl --failed`.
+    - name: Install KRL update service and timer
+      ansible.builtin.template:
+        src: "etc/systemd/system/{{ item }}.j2"
+        dest: "/etc/systemd/system/{{ item }}"
+        owner: root
+        group: root
+        mode: "0644"
+      loop:
+        - ssh-krl-update.service
+        - ssh-krl-update.timer
+
+    - name: Enable and start the KRL update timer
+      ansible.builtin.systemd:
+        name: ssh-krl-update.timer
+        enabled: true
+        state: started
+        daemon_reload: true
 
 - name: Start ssh service
   ansible.builtin.systemd:
