@@ -1,0 +1,16 @@
+---
+# Fakes the CD_ENV contract of the CenterDevice infrastructure repository that the role defaults
+# read, and keeps the KRL download runnable inside the molecule container (no S3 there).
+CD_ENV:
+  iaas:
+    account: molecule
+    env: test
+    name: aws
+  instance:
+    hostgroup: demo
+
+_sshd_krl:
+  s3_key: "molecule/revoked_keys.krl"
+  filename: "/etc/ssh/revoked_keys.krl"
+  update_command: "/bin/echo"
+  cron_special_time: "hourly"
