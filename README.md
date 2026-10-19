@@ -33,8 +33,8 @@ differ. The defaults are the CenterDevice values and read the consumer's `CD_ENV
 Until v0.4.0 the role took one `_sshd` dict with the keys `krl` and `principals` instead.
 
 Until v0.5.0 the KRL update ran from root's crontab (key `cron_special_time`). The role now installs
-`ssh-krl-update.service` and `ssh-krl-update.timer` and removes that cron entry, so a run of the new
-version switches an existing host over. The service runs with systemd's PATH, which includes
+`ssh-krl-update.service` and `ssh-krl-update.timer` instead; it does not remove an existing cron entry,
+so use it on new instances. The service runs with systemd's PATH, which includes
 `/usr/local/bin` (cron's PATH is `/usr/bin:/bin`), and a failed update shows up in the journal and in
 `systemctl --failed`.
 

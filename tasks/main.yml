@@ -65,11 +65,6 @@
         state: started
         daemon_reload: true
 
-    - name: Remove the KRL update cronjob of older role versions
-      ansible.builtin.cron:
-        name: "Update SSH Revoked Keys"
-        state: absent
-
 - name: Start ssh service
   ansible.builtin.systemd:
     name: ssh

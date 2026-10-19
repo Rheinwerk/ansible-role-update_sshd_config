@@ -41,18 +41,11 @@
         name: ssh-krl-update.service
       register: verify_krl_service
 
-    - name: Read root's crontab
-      ansible.builtin.command: crontab -l -u root
-      register: verify_crontab
-      changed_when: false
-      failed_when: false
-
-    - name: The KRL update runs from the systemd timer, not from cron
+    - name: The KRL update runs from the systemd timer
       ansible.builtin.assert:
         that:
           - verify_krl_timer.status.UnitFileState == 'enabled'
           - verify_krl_timer.status.ActiveState == 'active'
           - "'/bin/echo molecule/revoked_keys.krl /etc/ssh/revoked_keys.krl' in verify_krl_service.status.ExecStart"
           - verify_krl_service.status.Result == 'success'
-          - "'Update SSH Revoked Keys' not in verify_crontab.stdout"
-        fail_msg: "timer: {{ verify_krl_timer.status.UnitFileState }}/{{ verify_krl_timer.status.ActiveState }}, service: {{ verify_krl_service.status.Result }}, crontab: {{ verify_crontab.stdout }}"
+        fail_msg: "timer: {{ verify_krl_timer.status.UnitFileState }}/{{ verify_krl_timer.status.ActiveState }}, service: {{ verify_krl_service.status.Result }}"
