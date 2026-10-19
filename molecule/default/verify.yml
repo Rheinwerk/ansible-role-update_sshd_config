@@ -1,0 +1,29 @@
+---
+# The principals file is rendered from the role defaults, which read the CD_ENV contract faked in
+# tests/vars.yml; the KRL settings come from _sshd_krl in tests/vars.yml.
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Read the cd-admin principals file
+      ansible.builtin.slurp:
+        src: /etc/ssh/cd-admin_principals
+      register: verify_principals
+
+    - name: Read the sshd configuration
+      ansible.builtin.slurp:
+        src: /etc/ssh/sshd_config
+      register: verify_sshd_config
+
+    - name: The principals and the KRL settings are rendered from the variables
+      ansible.builtin.assert:
+        that:
+          - "'cd-admin_test-molecule-aws' in principals"
+          - "'cd-admin_demo-aws' in principals"
+          - "'AuthorizedPrincipalsFile /etc/ssh/%u_principals' in sshd_config"
+          - "'RevokedKeys /etc/ssh/revoked_keys.krl' in sshd_config"
+        fail_msg: "principals: {{ principals }}"
+      vars:
+        principals: "{{ verify_principals.content | b64decode }}"
+        sshd_config: "{{ verify_sshd_config.content | b64decode }}"

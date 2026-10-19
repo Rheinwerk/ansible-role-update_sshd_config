@@ -16,8 +16,21 @@ The target machine must have scollector installed.
 
 Role Variables
 --------------
-There is one main variable that drives this role: `_sshd`. It is a map that contains all configuration and settings for this role.
-Please see `defaults/main.yml` for details.
+
+Every setting is one variable with a default in `defaults/main.yml`; set only the ones that
+differ. The defaults are the CenterDevice values and read the consumer's `CD_ENV` contract.
+
+| Variable | Default | Reads |
+|---|---|---|
+| `_sshd_krl` | KRL from `cd.<account>.static/<env>/ssh_key_revocation_lists/revoked_keys.krl` to `/etc/ssh/revoked_keys.krl`, fetched by `/usr/local/sbin/update-ssh-krl` once and then `hourly` via cron | `CD_ENV.iaas.account`, `CD_ENV.iaas.env` |
+| `_sshd_principals` | `%u_principals` files; `cd-admin` gets the six env/account/name/hostgroup principals | `CD_ENV.iaas.env`, `CD_ENV.iaas.account`, `CD_ENV.iaas.name`, `CD_ENV.instance.hostgroup` |
+
+`_sshd_krl` keys: `s3_key`, `filename`, `update_command` (called as `<update_command> <s3_key> <filename>`),
+`cron_special_time`. `_sshd_principals` keys: `filename_pattern` (the `AuthorizedPrincipalsFile`),
+`mappings` (user to list of principals; every entry becomes a line `<user>_<entry>` next to
+`<user>_super`). An empty mapping (`{}`) skips that part of the role.
+
+Until v0.4.0 the role took one `_sshd` dict with the keys `krl` and `principals` instead.
 
 Dependencies
 ------------
@@ -28,16 +41,18 @@ None.
 Example Playbook
 ----------------
 
-The general contract of this role is to take the variables map `_sshd` from `defaults/main.yml` as a template for your configuration and pass that configuration as a parameter to this role.
-
-Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
+Only the principals differ from the defaults here; the KRL settings come from the role.
 
     - hosts: servers
-      var:
-        SSHD:
-          ...
+      vars:
+        _sshd_principals:
+          filename_pattern: "%u_principals"
+          mappings:
+            "ec2-user":
+              - "mapping1"
+              - "mapping2"
       roles:
-         - { role: update_sshd_config, tags: [ 'sshd' ], _sshd: "{{ SSHD }}" }
+         - { role: update_sshd_config, tags: [ 'sshd' ] }
 
 License
 -------
@@ -48,4 +63,3 @@ Author Information
 ------------------
 
 Original author is [Daniel Schneller](https://github.com/dschneller) as member of the [Rheinwerk](https://github.com/Rheinwerk) project.
-

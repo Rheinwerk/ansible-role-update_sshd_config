@@ -1,14 +1,22 @@
 # vim: ts=2 sw=2 et ft=ansible
 ---
-_sshd:
-  krl:
-    s3_key: "my.s3.bucketd/path/to/krl-file"
-    filename: "/etc/ssh/revoked_keys.krl"
-    update_command: "/bin/echo"
-    cron_special_time: "hourly"
-  principals:
-    filename_pattern: "%u_principals"
-    mappings:
-      "ec2-user":
-        - "mapping1"
-        - "mapping2"
+# Key revocation list: the role runs "<update_command> <s3_key> <filename>" once and then via cron.
+# The default reads the CD_ENV contract of the consumer; set `_sshd_krl: {}` to skip the KRL setup.
+_sshd_krl:
+  s3_key: "cd.{{ CD_ENV.iaas.account }}.static/{{ CD_ENV.iaas.env }}/ssh_key_revocation_lists/revoked_keys.krl"
+  filename: "/etc/ssh/revoked_keys.krl"
+  update_command: "/usr/local/sbin/update-ssh-krl"
+  cron_special_time: "hourly"
+
+# Authorized principals: every mapping entry becomes a line "<user>_<entry>" in
+# /etc/ssh/<user>_principals, next to "<user>_super". Set `_sshd_principals: {}` to skip.
+_sshd_principals:
+  filename_pattern: "%u_principals"
+  mappings:
+    "cd-admin":
+      - "{{ CD_ENV.iaas.env }}-{{ CD_ENV.iaas.account }}-{{ CD_ENV.iaas.name }}"
+      - "{{ CD_ENV.iaas.account }}-{{ CD_ENV.iaas.name }}"
+      - "{{ CD_ENV.iaas.name }}"
+      - "{{ CD_ENV.instance.hostgroup }}-{{ CD_ENV.iaas.env }}-{{ CD_ENV.iaas.account }}-{{ CD_ENV.iaas.name }}"
+      - "{{ CD_ENV.instance.hostgroup }}-{{ CD_ENV.iaas.account }}-{{ CD_ENV.iaas.name }}"
+      - "{{ CD_ENV.instance.hostgroup }}-{{ CD_ENV.iaas.name }}"

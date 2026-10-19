@@ -1,7 +1,7 @@
 ---
 
 - name: Configure SSH principals
-  when: _sshd.principals is defined
+  when: _sshd_principals | length > 0
   block:
     - name: Create Authorized Principals Files
       ansible.builtin.template:
@@ -10,23 +10,23 @@
         owner: "root"
         group: "root"
         mode: "0644"
-      with_dict: "{{ _sshd.principals.mappings }}"
+      with_dict: "{{ _sshd_principals.mappings }}"
 
     - name: Update sshd configuration - Authorized Principals
       ansible.builtin.lineinfile:
         path: "/etc/ssh/sshd_config"
         regexp: '^AuthorizedPrincipalsFile.*$'
-        line: "AuthorizedPrincipalsFile /etc/ssh/{{ _sshd.principals.filename_pattern }}"
+        line: "AuthorizedPrincipalsFile /etc/ssh/{{ _sshd_principals.filename_pattern }}"
 
 - name: Configure SSH KRL
-  when: _sshd.krl is defined
+  when: _sshd_krl | length > 0
   block:
     # This is done so we can be sure the file exists. If it
     # does not, SSHD will start, but reject any public key basic
     # logins, effectively locking us out.
     - name: Ensure KRL file exists
       ansible.builtin.file:
-        name: "{{ _sshd.krl.filename }}"
+        name: "{{ _sshd_krl.filename }}"
         owner: root
         group: root
         mode: "0644"
@@ -38,18 +38,18 @@
       ansible.builtin.lineinfile:
         path: "/etc/ssh/sshd_config"
         regexp: '^RevokedKeys.*$'
-        line: "RevokedKeys {{ _sshd.krl.filename }}"
+        line: "RevokedKeys {{ _sshd_krl.filename }}"
 
     # skip idempotence tests
     - name: Run initial KRL update # noqa no-changed-when
-      ansible.builtin.command: "{{ _sshd.krl.update_command }} {{ _sshd.krl.s3_key }} {{ _sshd.krl.filename }}"
+      ansible.builtin.command: "{{ _sshd_krl.update_command }} {{ _sshd_krl.s3_key }} {{ _sshd_krl.filename }}"
       tags: molecule-idempotence-notest
 
     - name: Install KRL update cronjob # noqa args[module]
       ansible.builtin.cron:
         name: "Update SSH Revoked Keys"
-        job: "{{ _sshd.krl.update_command }} {{ _sshd.krl.s3_key }} {{ _sshd.krl.filename }}"
-        special_time: "{{ _sshd.krl.cron_special_time | default('hourly') }}"
+        job: "{{ _sshd_krl.update_command }} {{ _sshd_krl.s3_key }} {{ _sshd_krl.filename }}"
+        special_time: "{{ _sshd_krl.cron_special_time }}"
 
 - name: Start ssh service
   ansible.builtin.systemd:
