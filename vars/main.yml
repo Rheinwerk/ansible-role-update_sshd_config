@@ -1,0 +1,11 @@
+---
+# Keys a non-empty _sshd_krl / _sshd_principals must set (tasks/assert.yml)
+_sshd_krl_required_keys:
+  - s3_key
+  - filename
+  - update_command
+  - on_calendar
+
+_sshd_principals_required_keys:
+  - filename_pattern
+  - mappings

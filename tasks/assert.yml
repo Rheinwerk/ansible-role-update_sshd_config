@@ -1,0 +1,50 @@
+---
+- name: Assert _sshd_krl and _sshd_principals are mappings
+  ansible.builtin.assert:
+    that:
+      - _sshd_krl is mapping
+      - _sshd_principals is mapping
+    fail_msg: "_sshd_krl and _sshd_principals must be mappings, {} skips that part of the role"
+    quiet: true
+  tags:
+    - always
+
+# s3_key, filename and update_command end up unquoted on a command line and in ExecStart
+- name: Assert _sshd_krl sets every key, absolute paths and no whitespace
+  ansible.builtin.assert:
+    that:
+      - _sshd_krl_required_keys | difference(_sshd_krl.keys()) | length == 0
+      - _sshd_krl_required_keys | map('extract', _sshd_krl) | reject('string') | list | length == 0
+      - _sshd_krl.s3_key is match('^\\S+$')
+      - _sshd_krl.filename is match('^/\\S+$')
+      - _sshd_krl.update_command is match('^/\\S+$')
+      - _sshd_krl.on_calendar | length > 0
+    fail_msg: >-
+      _sshd_krl must set {{ _sshd_krl_required_keys | join(', ') }} as strings; filename and update_command
+      absolute paths, s3_key, filename and update_command without whitespace, on_calendar not empty
+    quiet: true
+  when:
+    - _sshd_krl | length > 0
+  tags:
+    - always
+
+- name: Assert _sshd_principals sets a file name and maps users to lists of principals
+  ansible.builtin.assert:
+    that:
+      - _sshd_principals_required_keys | difference(_sshd_principals.keys()) | length == 0
+      - _sshd_principals.filename_pattern is string
+      - _sshd_principals.filename_pattern is match('^[^/\\s]+$')
+      - _sshd_principals.mappings is mapping
+      - _sshd_principals.mappings | length > 0
+      - _sshd_principals.mappings.keys() | reject('match', '^[a-z_][a-z0-9_-]*$') | list | length == 0
+      - _sshd_principals.mappings.values() | reject('sequence') | list | length == 0
+      - _sshd_principals.mappings.values() | select('string') | list | length == 0
+      - _sshd_principals.mappings.values() | map('reject', 'string') | map('list') | select | list | length == 0
+    fail_msg: >-
+      _sshd_principals must set filename_pattern (a file name below /etc/ssh, no slash) and mappings
+      (user name to a list of principal strings, at least one user)
+    quiet: true
+  when:
+    - _sshd_principals | length > 0
+  tags:
+    - always

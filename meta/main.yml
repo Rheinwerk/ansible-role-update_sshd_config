@@ -5,12 +5,12 @@ galaxy_info:
   description: Configures SSHD to include RevokedKeys and/or AuthorizedPrincipalsFile.
   company: Rheinwerk
   license: license (GPLv3)
-  min_ansible_version: 2.9.0
+  min_ansible_version: "2.18"
   platforms:
-    - name: Ubuntu
+    - name: Debian
       versions:
-        - focal
-        - jammy
+        - bookworm
+        - trixie
   galaxy_tags:
     - sshd
 dependencies: []

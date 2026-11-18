@@ -1,0 +1,44 @@
+---
+argument_specs:
+  main:
+    short_description: Configure sshd with a key revocation list and authorized principals files
+    description:
+      - The defaults are the CenterDevice values and read the consumer's CD_ENV contract.
+      - An empty dict (C({})) skips that part of the role, so no sub-option is required here; tasks/assert.yml checks a non-empty dict is complete.
+    options:
+      _sshd_krl:
+        type: dict
+        description:
+          - Key revocation list, fetched once with C(<update_command> <s3_key> <filename>) and then from the systemd timer ssh-krl-update.timer.
+          - Empty skips the KRL setup.
+        options:
+          s3_key:
+            type: str
+            description:
+              - S3 key of the revocation list, passed to update_command.
+          filename:
+            type: path
+            description:
+              - Absolute path of the local revocation list, set as RevokedKeys in sshd_config.
+          update_command:
+            type: path
+            description:
+              - Absolute path of the command that downloads the list.
+          on_calendar:
+            type: str
+            description:
+              - systemd OnCalendar expression of the update timer, e.g. hourly.
+      _sshd_principals:
+        type: dict
+        description:
+          - Authorized principals files. Every mapping entry becomes a line C(<user>_<entry>) next to C(<user>_super).
+          - Empty skips the principals setup.
+        options:
+          filename_pattern:
+            type: str
+            description:
+              - File name below /etc/ssh, set as AuthorizedPrincipalsFile; sshd expands C(%u) to the user name.
+          mappings:
+            type: dict
+            description:
+              - User name to the list of its principals; one file /etc/ssh/<user>_principals per user.
