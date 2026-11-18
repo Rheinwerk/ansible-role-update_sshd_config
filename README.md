@@ -14,6 +14,8 @@ Requirements
 
 The target machine must have scollector installed.
 
+ansible-core 2.18 or newer.
+
 Role Variables
 --------------
 
@@ -29,6 +31,18 @@ differ. The defaults are the CenterDevice values and read the consumer's `CD_ENV
 `on_calendar` (a systemd `OnCalendar` expression, e.g. `hourly`). `_sshd_principals` keys: `filename_pattern` (the `AuthorizedPrincipalsFile`),
 `mappings` (user to list of principals; every entry becomes a line `<user>_<entry>` next to
 `<user>_super`). An empty mapping (`{}`) skips that part of the role.
+
+The role validates both variables before it changes anything. `meta/argument_specs.yml` rejects wrong
+types and unknown keys; `tasks/assert.yml` (tag `always`) requires for a non-empty dict:
+
+- `_sshd_krl`: every key set as a string; `s3_key` without whitespace; `filename` and `update_command`
+  absolute paths without whitespace (they end up unquoted on a command line and in `ExecStart`)
+- `_sshd_principals`: `filename_pattern` a file name below `/etc/ssh` (no slash, no whitespace);
+  `mappings` at least one user, user names matching `[a-z_][a-z0-9_-]*`, each with a flat list of
+  principal strings
+
+Since v1.0.0 an empty `mappings` with a `filename_pattern` fails instead of setting an
+`AuthorizedPrincipalsFile` without any principals file.
 
 Until v0.4.0 the role took one `_sshd` dict with the keys `krl` and `principals` instead.
 

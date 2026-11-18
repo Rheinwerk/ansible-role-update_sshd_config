@@ -1,4 +1,8 @@
 ---
+- name: Assert
+  ansible.builtin.import_tasks: assert.yml
+  tags:
+    - always
 
 - name: Configure SSH principals
   when: _sshd_principals | length > 0
@@ -10,7 +14,9 @@
         owner: "root"
         group: "root"
         mode: "0644"
-      with_dict: "{{ _sshd_principals.mappings }}"
+      loop: "{{ _sshd_principals.mappings | dict2items }}"
+      loop_control:
+        label: "{{ item.key }}"
 
     - name: Update sshd configuration - Authorized Principals
       ansible.builtin.lineinfile:
