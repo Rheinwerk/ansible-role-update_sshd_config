@@ -3,6 +3,8 @@
 # read, and keeps the KRL download runnable inside the molecule container (no S3 there): the
 # update command only records its arguments (molecule/default/converge_override.yml). Its path and
 # s3_key carry whitespace, %, $, a quote and a backslash, which must reach it unchanged.
+# _sshd_principals uses a pattern other than the default %u_principals, with two of the default
+# cd-admin principals and a second user.
 CD_ENV:
   iaas:
     account: molecule
@@ -16,3 +18,12 @@ _sshd_krl:
   filename: "/etc/ssh/revoked_keys.krl"
   update_command: "/usr/local/sbin/molecule krl-update"
   on_calendar: "hourly"
+
+_sshd_principals:
+  filename_pattern: "principals-%u.list"
+  mappings:
+    "cd-admin":
+      - "{{ CD_ENV.iaas.env }}-{{ CD_ENV.iaas.account }}-{{ CD_ENV.iaas.name }}"
+      - "{{ CD_ENV.instance.hostgroup }}-{{ CD_ENV.iaas.name }}"
+    "deploy":
+      - "{{ CD_ENV.iaas.name }}"

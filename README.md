@@ -29,9 +29,11 @@ differ. The defaults are the CenterDevice values and read the consumer's `CD_ENV
 | `_sshd_principals` | `%u_principals` files; `cd-admin` gets the six env/account/name/hostgroup principals | `CD_ENV.iaas.env`, `CD_ENV.iaas.account`, `CD_ENV.iaas.name`, `CD_ENV.instance.hostgroup` |
 
 `_sshd_krl` keys: `s3_key`, `filename`, `update_command` (called as `<update_command> <s3_key> <filename>`),
-`on_calendar` (a systemd `OnCalendar` expression, e.g. `hourly`). `_sshd_principals` keys: `filename_pattern` (the `AuthorizedPrincipalsFile`),
-`mappings` (user to list of principals; every entry becomes a line `<user>_<entry>` next to
-`<user>_super`). An empty mapping (`{}`) skips that part of the role.
+`on_calendar` (a systemd `OnCalendar` expression, e.g. `hourly`). `_sshd_principals` keys:
+`filename_pattern` (the `AuthorizedPrincipalsFile` below `/etc/ssh`; the role writes each user's file
+under the same name with `%u` replaced by the user name, as sshd expands it), `mappings` (user to
+list of principals; every entry becomes a line `<user>_<entry>` next to `<user>_super`). An empty
+mapping (`{}`) skips that part of the role.
 
 The role validates both variables before it changes anything. `meta/argument_specs.yml` rejects wrong
 types and unknown keys; `tasks/assert.yml` (tag `always`) requires for a non-empty dict:
@@ -41,12 +43,16 @@ types and unknown keys; `tasks/assert.yml` (tag `always`) requires for a non-emp
   `update_command` without control characters. The initial run passes the three values as separate
   arguments, and `ExecStart` quotes each one and escapes `%`, `$`, `"` and `\`, so whitespace and
   systemd specifiers reach the command unchanged.
-- `_sshd_principals`: `filename_pattern` a file name below `/etc/ssh` (no slash, no whitespace);
-  `mappings` at least one user, user names matching `[a-z_][a-z0-9_-]*`, each with a flat list of
-  principal strings
+- `_sshd_principals`: `filename_pattern` a file name below `/etc/ssh` (no slash, no whitespace) with
+  exactly one `%u` and no other `%` token (without `%u` all users would share one file, and the role
+  does not resolve sshd's other tokens); `mappings` at least one user, user names matching
+  `[a-z_][a-z0-9_-]*`, each with a flat list of principal strings
 
 Since v1.0.0 an empty `mappings` with a `filename_pattern` fails instead of setting an
 `AuthorizedPrincipalsFile` without any principals file.
+
+Until v1.0.0 the principals files were always written as `/etc/ssh/<user>_principals`, whatever
+`filename_pattern` said, so only the default `%u_principals` worked.
 
 Until v0.4.0 the role took one `_sshd` dict with the keys `krl` and `principals` instead.
 

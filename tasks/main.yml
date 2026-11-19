@@ -10,7 +10,7 @@
     - name: Create Authorized Principals Files
       ansible.builtin.template:
         src: "etc/ssh/authorized_principals.j2"
-        dest: "/etc/ssh/{{ item.key }}_principals"
+        dest: "/etc/ssh/{{ _sshd_principals.filename_pattern | replace('%u', item.key) }}"
         owner: "root"
         group: "root"
         mode: "0644"

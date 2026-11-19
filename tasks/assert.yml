@@ -36,16 +36,18 @@
     that:
       - _sshd_principals_required_keys | difference(_sshd_principals.keys()) | length == 0
       - _sshd_principals.filename_pattern is string
-      - _sshd_principals.filename_pattern is match('^[^/\\s]+$')
+      # \Z, not $: Python's $ also matches before a trailing newline, which would end up in a file name
+      - _sshd_principals.filename_pattern is match('^[^%/\\s]*%u[^%/\\s]*\\Z')
       - _sshd_principals.mappings is mapping
       - _sshd_principals.mappings | length > 0
-      - _sshd_principals.mappings.keys() | reject('match', '^[a-z_][a-z0-9_-]*$') | list | length == 0
+      - _sshd_principals.mappings.keys() | reject('match', '^[a-z_][a-z0-9_-]*\\Z') | list | length == 0
       - _sshd_principals.mappings.values() | reject('sequence') | list | length == 0
       - _sshd_principals.mappings.values() | select('string') | list | length == 0
       - _sshd_principals.mappings.values() | map('reject', 'string') | map('list') | select | list | length == 0
     fail_msg: >-
-      _sshd_principals must set filename_pattern (a file name below /etc/ssh, no slash) and mappings
-      (user name to a list of principal strings, at least one user)
+      _sshd_principals must set filename_pattern (a file name below /etc/ssh with exactly one %u and no
+      other % token, no slash, no whitespace) and mappings (user name to a list of principal strings,
+      at least one user)
     quiet: true
   when:
     - _sshd_principals | length > 0
