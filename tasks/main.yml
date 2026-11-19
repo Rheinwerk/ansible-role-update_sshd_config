@@ -48,7 +48,12 @@
 
     # skip idempotence tests
     - name: Run initial KRL update # noqa no-changed-when
-      ansible.builtin.command: "{{ _sshd_krl.update_command }} {{ _sshd_krl.s3_key }} {{ _sshd_krl.filename }}"
+      ansible.builtin.command:
+        argv:
+          - "{{ _sshd_krl.update_command }}"
+          - "{{ _sshd_krl.s3_key }}"
+          - "{{ _sshd_krl.filename }}"
+        expand_argument_vars: false
       tags: molecule-idempotence-notest
 
     # A systemd timer instead of cron: the service gets systemd's PATH (cron's is /usr/bin:/bin),

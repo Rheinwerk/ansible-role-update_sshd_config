@@ -6,15 +6,16 @@ startup process before the actual services runs.
 
 [![Build Status](https://github.com/Rheinwerk/ansible-role-update_sshd_config/actions/workflows/ci.yml/badge.svg)](https://github.com/Rheinwerk/ansible-role-update_sshd_config/actions/workflows/ci.yml)
 
-Notice that it will not start the service and expects the program to be
-installed already.
-
 Requirements
 ------------
 
-The target machine must have scollector installed.
-
-ansible-core 2.18 or newer.
+- Debian (bookworm, trixie) with systemd: the role starts the `ssh` unit and installs a systemd timer
+- openssh-server installed on the target; the role does not install it, it only edits
+  `/etc/ssh/sshd_config` and starts the `ssh` service if it is not running. It does not reload a
+  running sshd, so the changes take effect on the next sshd start
+- the KRL `update_command` (default `/usr/local/sbin/update-ssh-krl`) present and executable on the
+  target, unless `_sshd_krl` is `{}`; the role runs it during the play, so it must exit 0
+- ansible-core 2.18 or newer
 
 Role Variables
 --------------
@@ -37,8 +38,11 @@ mapping (`{}`) skips that part of the role.
 The role validates both variables before it changes anything. `meta/argument_specs.yml` rejects wrong
 types and unknown keys; `tasks/assert.yml` (tag `always`) requires for a non-empty dict:
 
-- `_sshd_krl`: every key set as a string; `s3_key` without whitespace; `filename` and `update_command`
-  absolute paths without whitespace (they end up unquoted on a command line and in `ExecStart`)
+- `_sshd_krl`: every key set as a string; `filename` and `update_command` absolute paths; `filename`
+  without whitespace (it ends up unquoted as `RevokedKeys` in `sshd_config`); `s3_key` and
+  `update_command` without control characters. The initial run passes the three values as separate
+  arguments, and `ExecStart` quotes each one and escapes `%`, `$`, `"` and `\`, so whitespace and
+  systemd specifiers reach the command unchanged.
 - `_sshd_principals`: `filename_pattern` a file name below `/etc/ssh` (no slash, no whitespace) with
   exactly one `%u` and no other `%` token (without `%u` all users would share one file, and the role
   does not resolve sshd's other tokens); `mappings` at least one user, user names matching

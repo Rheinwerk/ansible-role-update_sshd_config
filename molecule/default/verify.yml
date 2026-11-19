@@ -42,6 +42,19 @@
                         | map('split'))) }}
         sshd_config: "{{ verify_sshd_config.content | b64decode }}"
 
+    # The update command in converge_override.yml appends one line per argument and "--" per call;
+    # tests/vars.yml gives it a path and an s3_key with whitespace, %, $, a quote and a backslash.
+    # Every recorded call must match, also one the hourly timer may add during the run.
+    - name: Read the arguments of the initial KRL update
+      ansible.builtin.slurp:
+        src: /var/tmp/krl-update.args
+      register: verify_krl_initial_args
+
+    - name: Forget the arguments of the initial KRL update
+      ansible.builtin.file:
+        path: /var/tmp/krl-update.args
+        state: absent
+
     - name: Read the state of the KRL update timer
       ansible.builtin.systemd_service:
         name: ssh-krl-update.timer
@@ -55,11 +68,29 @@
         name: ssh-krl-update.service
       register: verify_krl_service
 
-    - name: The KRL update runs from the systemd timer
+    - name: Read the arguments of the KRL update service
+      ansible.builtin.slurp:
+        src: /var/tmp/krl-update.args
+      register: verify_krl_service_args
+
+    - name: The initial run and the systemd timer pass the KRL arguments unchanged
       ansible.builtin.assert:
         that:
+          - initial_args | length > 0
+          - initial_args == expected_record * (initial_args | length // 3)
+          - service_args | length > 0
+          - service_args == expected_record * (service_args | length // 3)
           - verify_krl_timer.status.UnitFileState == 'enabled'
           - verify_krl_timer.status.ActiveState == 'active'
-          - "'/bin/echo molecule/revoked_keys.krl /etc/ssh/revoked_keys.krl' in verify_krl_service.status.ExecStart"
           - verify_krl_service.status.Result == 'success'
-        fail_msg: "timer: {{ verify_krl_timer.status.UnitFileState }}/{{ verify_krl_timer.status.ActiveState }}, service: {{ verify_krl_service.status.Result }}"
+        fail_msg: >-
+          expected {{ expected_record }} per call, initial run {{ initial_args }}, service {{ service_args }};
+          timer: {{ verify_krl_timer.status.UnitFileState }}/{{ verify_krl_timer.status.ActiveState }},
+          service: {{ verify_krl_service.status.Result }}
+      vars:
+        expected_record:
+          - "{{ _sshd_krl.s3_key }}"
+          - "{{ _sshd_krl.filename }}"
+          - "--"
+        initial_args: "{{ (verify_krl_initial_args.content | b64decode).splitlines() }}"
+        service_args: "{{ (verify_krl_service_args.content | b64decode).splitlines() }}"

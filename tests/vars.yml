@@ -1,6 +1,8 @@
 ---
 # Fakes the CD_ENV contract of the CenterDevice infrastructure repository that the role defaults
-# read, and keeps the KRL download runnable inside the molecule container (no S3 there).
+# read, and keeps the KRL download runnable inside the molecule container (no S3 there): the
+# update command only records its arguments (molecule/default/converge_override.yml). Its path and
+# s3_key carry whitespace, %, $, a quote and a backslash, which must reach it unchanged.
 # _sshd_principals uses a pattern other than the default %u_principals, with two of the default
 # cd-admin principals and a second user.
 CD_ENV:
@@ -12,9 +14,9 @@ CD_ENV:
     hostgroup: demo
 
 _sshd_krl:
-  s3_key: "molecule/revoked_keys.krl"
+  s3_key: 'molecule/%i 100% $HOME ${HOME} "q" b\s/revoked_keys.krl'
   filename: "/etc/ssh/revoked_keys.krl"
-  update_command: "/bin/echo"
+  update_command: "/usr/local/sbin/molecule krl-update"
   on_calendar: "hourly"
 
 _sshd_principals:

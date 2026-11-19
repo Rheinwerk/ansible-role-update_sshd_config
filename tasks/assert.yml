@@ -9,19 +9,22 @@
   tags:
     - always
 
-# s3_key, filename and update_command end up unquoted on a command line and in ExecStart
-- name: Assert _sshd_krl sets every key, absolute paths and no whitespace
+# The command runs as argv and ExecStart quotes every argument, but a newline would end the
+# ExecStart line, so control characters are rejected. filename also ends up unquoted as RevokedKeys
+# in sshd_config. \Z, not $: Python's $ also matches before a trailing newline.
+- name: Assert _sshd_krl sets every key, absolute paths and no control characters
   ansible.builtin.assert:
     that:
       - _sshd_krl_required_keys | difference(_sshd_krl.keys()) | length == 0
       - _sshd_krl_required_keys | map('extract', _sshd_krl) | reject('string') | list | length == 0
-      - _sshd_krl.s3_key is match('^\\S+$')
-      - _sshd_krl.filename is match('^/\\S+$')
-      - _sshd_krl.update_command is match('^/\\S+$')
+      - _sshd_krl.s3_key is match('^[^\\x00-\\x1f\\x7f]+\\Z')
+      - _sshd_krl.filename is match('^/\\S+\\Z')
+      - _sshd_krl.update_command is match('^/[^\\x00-\\x1f\\x7f]+\\Z')
       - _sshd_krl.on_calendar | length > 0
     fail_msg: >-
       _sshd_krl must set {{ _sshd_krl_required_keys | join(', ') }} as strings; filename and update_command
-      absolute paths, s3_key, filename and update_command without whitespace, on_calendar not empty
+      absolute paths, filename without whitespace, s3_key and update_command without control characters,
+      on_calendar not empty
     quiet: true
   when:
     - _sshd_krl | length > 0
