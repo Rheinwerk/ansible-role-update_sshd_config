@@ -36,8 +36,11 @@ differ. The defaults are the CenterDevice values and read the consumer's `CD_ENV
 The role validates both variables before it changes anything. `meta/argument_specs.yml` rejects wrong
 types and unknown keys; `tasks/assert.yml` (tag `always`) requires for a non-empty dict:
 
-- `_sshd_krl`: every key set as a string; `s3_key` without whitespace; `filename` and `update_command`
-  absolute paths without whitespace (they end up unquoted on a command line and in `ExecStart`)
+- `_sshd_krl`: every key set as a string; `filename` and `update_command` absolute paths; `filename`
+  without whitespace (it ends up unquoted as `RevokedKeys` in `sshd_config`); `s3_key` and
+  `update_command` without control characters. The initial run passes the three values as separate
+  arguments, and `ExecStart` quotes each one and escapes `%`, `$`, `"` and `\`, so whitespace and
+  systemd specifiers reach the command unchanged.
 - `_sshd_principals`: `filename_pattern` a file name below `/etc/ssh` (no slash, no whitespace);
   `mappings` at least one user, user names matching `[a-z_][a-z0-9_-]*`, each with a flat list of
   principal strings

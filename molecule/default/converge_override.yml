@@ -12,3 +12,14 @@
     mode: "0755"
     owner: root
   when: ansible_facts['virtualization_type'] in ['docker', 'podman', 'lxc', 'containerd', 'VirtualPC']
+
+# One line per argument and "--" after each call
+- name: Install a KRL update command that records its arguments
+  ansible.builtin.copy:
+    dest: "/usr/local/sbin/molecule krl-update"
+    content: |
+      #!/bin/sh
+      printf '%s\n' "$@" -- >> /var/tmp/krl-update.args
+    owner: root
+    group: root
+    mode: "0755"
