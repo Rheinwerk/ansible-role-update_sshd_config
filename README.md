@@ -6,15 +6,16 @@ startup process before the actual services runs.
 
 [![Build Status](https://github.com/Rheinwerk/ansible-role-update_sshd_config/actions/workflows/ci.yml/badge.svg)](https://github.com/Rheinwerk/ansible-role-update_sshd_config/actions/workflows/ci.yml)
 
-Notice that it will not start the service and expects the program to be
-installed already.
-
 Requirements
 ------------
 
-The target machine must have scollector installed.
-
-ansible-core 2.18 or newer.
+- Debian (bookworm, trixie) with systemd: the role starts the `ssh` unit and installs a systemd timer
+- openssh-server installed on the target; the role does not install it, it only edits
+  `/etc/ssh/sshd_config` and starts the `ssh` service if it is not running. It does not reload a
+  running sshd, so the changes take effect on the next sshd start
+- the KRL `update_command` (default `/usr/local/sbin/update-ssh-krl`) present and executable on the
+  target, unless `_sshd_krl` is `{}`; the role runs it during the play, so it must exit 0
+- ansible-core 2.18 or newer
 
 Role Variables
 --------------
