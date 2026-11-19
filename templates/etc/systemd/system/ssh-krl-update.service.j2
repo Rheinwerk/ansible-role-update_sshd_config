@@ -1,4 +1,8 @@
 {{ ansible_managed | comment }}
+{# One double-quoted item per argument: backslash and quote get C escapes (systemd.syntax(7),
+   "Quoting"), % and $ are doubled so systemd expands no specifier or variable
+   (systemd.service(5), "Command lines"). #}
+{% macro systemd_quote(value) %}"{{ value | replace('\\', '\\\\') | replace('"', '\\"') | replace('%', '%%') | replace('$', '$$') }}"{% endmacro %}
 [Unit]
 Description=Update the SSH key revocation list from S3
 Wants=network-online.target
@@ -6,4 +10,4 @@ After=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart={{ _sshd_krl.update_command }} {{ _sshd_krl.s3_key }} {{ _sshd_krl.filename }}
+ExecStart={{ systemd_quote(_sshd_krl.update_command) }} {{ systemd_quote(_sshd_krl.s3_key) }} {{ systemd_quote(_sshd_krl.filename) }}
