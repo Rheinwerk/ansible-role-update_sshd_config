@@ -1,31 +1,45 @@
 ---
-# The principals file is rendered from the role defaults, which read the CD_ENV contract faked in
-# tests/vars.yml; the KRL settings come from _sshd_krl in tests/vars.yml.
+# The principals and the KRL settings come from tests/vars.yml, which also fakes the CD_ENV contract
+# the role defaults read. Its filename_pattern is not the default, so the files sshd looks for only
+# exist if the role derives their path from the pattern. sshd -T prints the pattern unexpanded (sshd
+# expands %u at login), so this proves the role writes where the configured pattern points, not a
+# certificate login.
 - name: Verify
   hosts: all
   become: true
   gather_facts: false
   tasks:
-    - name: Read the cd-admin principals file
+    - name: Read the effective sshd configuration # noqa no-changed-when
+      ansible.builtin.command: sshd -T
+      register: verify_sshd_effective
+
+    - name: Read the principals file sshd uses for each user
       ansible.builtin.slurp:
-        src: /etc/ssh/cd-admin_principals
+        src: "{{ principals_file | replace('%u', item) }}"
+      loop: "{{ _sshd_principals.mappings.keys() | list }}"
       register: verify_principals
+      vars:
+        principals_file: "{{ verify_sshd_effective.stdout_lines | select('match', 'authorizedprincipalsfile ') | first | split | last }}"
 
     - name: Read the sshd configuration
       ansible.builtin.slurp:
         src: /etc/ssh/sshd_config
       register: verify_sshd_config
 
-    - name: The principals and the KRL settings are rendered from the variables
+    - name: sshd reads the principals files the role writes, and the KRL setting is rendered
       ansible.builtin.assert:
         that:
-          - "'cd-admin_test-molecule-aws' in principals"
-          - "'cd-admin_demo-aws' in principals"
-          - "'AuthorizedPrincipalsFile /etc/ssh/%u_principals' in sshd_config"
+          - principals_by_user['cd-admin'][0] == 'cd-admin_super'
+          - "'cd-admin_test-molecule-aws' in principals_by_user['cd-admin']"
+          - "'cd-admin_demo-aws' in principals_by_user['cd-admin']"
+          - principals_by_user['deploy'] == ['deploy_super', 'deploy_aws']
           - "'RevokedKeys /etc/ssh/revoked_keys.krl' in sshd_config"
-        fail_msg: "principals: {{ principals }}"
+        fail_msg: "principals: {{ principals_by_user }}"
       vars:
-        principals: "{{ verify_principals.content | b64decode }}"
+        principals_by_user: >-
+          {{ dict(verify_principals.results | map(attribute='item')
+                  | zip(verify_principals.results | map(attribute='content') | map('b64decode')
+                        | map('split'))) }}
         sshd_config: "{{ verify_sshd_config.content | b64decode }}"
 
     - name: Read the state of the KRL update timer

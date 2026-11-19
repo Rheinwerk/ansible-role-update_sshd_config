@@ -10,7 +10,8 @@ _sshd_krl:
   on_calendar: "hourly"
 
 # Authorized principals: every mapping entry becomes a line "<user>_<entry>" in
-# /etc/ssh/<user>_principals, next to "<user>_super". Set `_sshd_principals: {}` to skip.
+# /etc/ssh/<filename_pattern with %u replaced by the user>, next to "<user>_super".
+# Set `_sshd_principals: {}` to skip.
 _sshd_principals:
   filename_pattern: "%u_principals"
   mappings:

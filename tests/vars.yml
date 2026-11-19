@@ -1,6 +1,8 @@
 ---
 # Fakes the CD_ENV contract of the CenterDevice infrastructure repository that the role defaults
 # read, and keeps the KRL download runnable inside the molecule container (no S3 there).
+# _sshd_principals uses a pattern other than the default %u_principals, with two of the default
+# cd-admin principals and a second user.
 CD_ENV:
   iaas:
     account: molecule
@@ -14,3 +16,12 @@ _sshd_krl:
   filename: "/etc/ssh/revoked_keys.krl"
   update_command: "/bin/echo"
   on_calendar: "hourly"
+
+_sshd_principals:
+  filename_pattern: "principals-%u.list"
+  mappings:
+    "cd-admin":
+      - "{{ CD_ENV.iaas.env }}-{{ CD_ENV.iaas.account }}-{{ CD_ENV.iaas.name }}"
+      - "{{ CD_ENV.instance.hostgroup }}-{{ CD_ENV.iaas.name }}"
+    "deploy":
+      - "{{ CD_ENV.iaas.name }}"

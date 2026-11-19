@@ -37,8 +37,9 @@ argument_specs:
           filename_pattern:
             type: str
             description:
-              - File name below /etc/ssh, set as AuthorizedPrincipalsFile; sshd expands C(%u) to the user name.
+              - File name below /etc/ssh with exactly one C(%u) and no other C(%) token, set as AuthorizedPrincipalsFile.
+              - sshd expands C(%u) to the user name, and the role writes each user's file with C(%u) replaced the same way.
           mappings:
             type: dict
             description:
-              - User name to the list of its principals; one file /etc/ssh/<user>_principals per user.
+              - User name to the list of its principals; one file per user, named by filename_pattern.
